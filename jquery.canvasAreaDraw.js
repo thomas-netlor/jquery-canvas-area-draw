@@ -12,10 +12,12 @@
 
     var points, activePoint, settings;
     var $reset, $canvas, ctx, image;
-    var draw, mousedown, stopdrag, move, resize, reset, rightclick, record;
+    var draw, mousedown, stopdrag, move, resize, reset, rightclick, record, propW=1, propH=1;
 
     settings = $.extend({
-      imageUrl: $(this).attr('data-image-url')
+      imageUrl: $(this).attr('data-image-url'),
+      imageWidth: $(this).attr('data-image-width'),
+      imageHeight: $(this).attr('data-image-height'),
     }, options);
 
     if ( $(this).val().length ) {
@@ -32,13 +34,21 @@
 
     image = new Image();
     resize = function() {
-      $canvas.attr('height', image.height).attr('width', image.width);
+      if(settings.imageWidth != undefined && settings.imageHeight != undefined){
+      	$canvas.attr('height', settings.imageHeight).attr('width', settings.imageWidth);
+      	propW = image.height/settings.imageHeight;
+      	propH = image.width/settings.imageWidth;
+      }else
+        $canvas.attr('height', image.height).attr('width', image.width);
       draw();
     };
     $(image).load(resize);
     image.src = settings.imageUrl;
     if (image.loaded) resize();
-    $canvas.css({background: 'url('+image.src+')'});
+    if(settings.imageWidth != undefined && settings.imageHeight != undefined)
+      $canvas.css({background: 'url('+image.src+')',"background-size": settings.imageWidth+"px "+settings.imageHeight+"px"});
+  	else
+  	  $canvas.css({background: 'url('+image.src+')'});
 
     $(document).ready( function() {
       $(input).after('<br>', $canvas, '<br>', $reset);
@@ -58,8 +68,8 @@
         e.offsetX = (e.pageX - $(e.target).offset().left);
         e.offsetY = (e.pageY - $(e.target).offset().top);
       }
-      points[activePoint] = Math.round(e.offsetX);
-      points[activePoint+1] = Math.round(e.offsetY);
+      points[activePoint] = Math.round(e.offsetX*propW);
+      points[activePoint+1] = Math.round(e.offsetY*propH);
       draw();
     };
 
@@ -75,7 +85,7 @@
         e.offsetX = (e.pageX - $(e.target).offset().left);
         e.offsetY = (e.pageY - $(e.target).offset().top);
       }
-      var x = e.offsetX, y = e.offsetY;
+      var x = e.offsetX*propW-2, y = e.offsetY*propH-2;
       for (var i = 0; i < points.length; i+=2) {
         dis = Math.sqrt(Math.pow(x - points[i], 2) + Math.pow(y - points[i+1], 2));
         if ( dis < 6 ) {
@@ -100,7 +110,7 @@
         e.offsetX = (e.pageX - $(e.target).offset().left);
         e.offsetY = (e.pageY - $(e.target).offset().top);
       }
-      x = e.offsetX; y = e.offsetY;
+      x = e.offsetX*propW-2; y = e.offsetY*propH-2;
 
       for (var i = 0; i < points.length; i+=2) {
         dis = Math.sqrt(Math.pow(x - points[i], 2) + Math.pow(y - points[i+1], 2));
@@ -147,12 +157,12 @@
       ctx.lineWidth = 1;
 
       ctx.beginPath();
-      ctx.moveTo(points[0], points[1]);
+      ctx.moveTo(points[0]/propW, points[1]/propH);
       for (var i = 0; i < points.length; i+=2) {
-        ctx.fillRect(points[i]-2, points[i+1]-2, 4, 4);
-        ctx.strokeRect(points[i]-2, points[i+1]-2, 4, 4);
+        ctx.fillRect((points[i]/propW)-2, (points[i+1]/propH)-2, 4, 4);
+        ctx.strokeRect((points[i]/propW)-2, (points[i+1]/propH)-2, 4, 4);
         if (points.length > 2 && i > 1) {
-          ctx.lineTo(points[i], points[i+1]);
+          ctx.lineTo((points[i]/propW), (points[i+1]/propH));
         }
       }
       ctx.closePath();
